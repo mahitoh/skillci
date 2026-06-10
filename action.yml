@@ -1,5 +1,6 @@
 name: "skillci"
-description: "Lint and safety-audit AI agent skills (SKILL.md) on every push and PR."
+description: "Lint and safety-audit AI agent skills (SKILL.md) on every push and PR. Catches malicious patterns and broken skills."
+author: "mahitoh"
 branding:
   icon: "shield"
   color: "green"
@@ -9,20 +10,29 @@ inputs:
     required: false
     default: "."
   command:
-    description: "Which check to run: run, lint, or audit. (test needs an agent; not run by default.)"
+    description: "Which check to run: run, lint, or audit. (test needs an agent and is skipped in CI.)"
     required: false
     default: "run"
   args:
-    description: "Extra args passed through to skillci (e.g. --html report.html)."
+    description: "Extra args passed through to skillci (e.g. --html report.html, --json)."
     required: false
     default: ""
 runs:
   using: "composite"
   steps:
+    # Self-contained: build skillci from this action's own pinned source so the
+    # Action works with zero dependency on any package registry.
+    - name: Set up Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+    - name: Build skillci
+      shell: bash
+      run: |
+        cd "$GITHUB_ACTION_PATH"
+        npm ci --ignore-scripts
+        npm run build
     - name: Run skillci
       shell: bash
       run: |
-        cmd="${{ inputs.command }}"
-        # In CI we default `run` to lint+audit only (no agent installed), so
-        # skip the scenario phase unless the caller explicitly asks for `test`.
-        npx --yes skillci@latest "$cmd" "${{ inputs.path }}" ${{ inputs.args }}
+        node "$GITHUB_ACTION_PATH/dist/cli.js" "${{ inputs.command }}" "${{ inputs.path }}" ${{ inputs.args }}

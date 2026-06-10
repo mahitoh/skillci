@@ -29,8 +29,7 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist",
-    "rules",
-    "templates"
+    "rules"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
