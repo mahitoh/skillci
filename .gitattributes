@@ -1,0 +1,6 @@
+# Normalize line endings to LF for all text so checkouts are consistent
+# across Windows/macOS/Linux and the published CLI shebang stays valid.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.gif binary

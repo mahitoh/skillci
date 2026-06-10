@@ -1,0 +1,13 @@
+scenarios:
+  - name: groups commits into changelog sections
+    prompt: |
+      Draft a changelog from these commits:
+      feat: add CSV export
+      fix: handle empty result set
+      chore: update linter
+    expect:
+      no_error: true
+      output_contains:
+        - "Added"
+        - "Fixed"
+        - "CSV export"

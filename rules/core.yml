@@ -1,0 +1,94 @@
+# skillci core safety rules.
+# Each rule is matched (case-insensitive, multiline) against the skill body,
+# frontmatter, and/or sibling script files. These target the patterns seen in
+# real agent-skill supply-chain attacks (ClawHavoc, ToxicSkills) plus common
+# prompt-injection and exfiltration tricks. Community PRs welcome — add a rule,
+# add a fixture, done.
+
+- id: audit/curl-pipe-sh
+  name: Remote script piped to a shell
+  severity: error
+  target: all
+  description: Downloads a script from the internet and executes it immediately, the classic supply-chain backdoor vector.
+  hint: Vendor the script into the skill and review it, or document the URL for the user to run manually.
+  pattern: "(?:curl|wget)\\s+[^|\\n]*\\|\\s*(?:sudo\\s+)?(?:ba|z|d)?sh\\b"
+
+- id: audit/credential-file-read
+  name: Reads private keys or credential stores
+  severity: error
+  target: all
+  description: Accesses SSH keys, cloud credentials, or keychains — a hallmark of the infostealer skills found on ClawHub.
+  hint: Skills should never need to read ~/.ssh, ~/.aws/credentials, or browser password stores.
+  pattern: "(?:~|\\$HOME|/home/[^/\\n]+|/Users/[^/\\n]+)/(?:\\.ssh/id_|\\.aws/credentials|\\.config/gcloud|\\.netrc|\\.docker/config\\.json)"
+
+- id: audit/env-secret-exfil
+  name: Environment secrets sent off-machine
+  severity: error
+  target: all
+  description: Expands a secret-looking environment variable near a network call, in either order — the shape of a credential exfiltration.
+  hint: Never transmit API keys, tokens, or passwords to an external endpoint.
+  pattern: "(?:curl|wget|fetch|nc\\s)[\\s\\S]{0,200}\\$\\{?[A-Z_]*(?:API_KEY|SECRET|TOKEN|PASSWORD)|\\$\\{?[A-Z_]*(?:API_KEY|SECRET|TOKEN|PASSWORD)[\\s\\S]{0,200}(?:curl|wget|fetch|https?://)"
+
+- id: audit/crypto-wallet-access
+  name: Cryptocurrency wallet access
+  severity: error
+  target: all
+  description: References crypto wallet files/seed phrases — the primary payload of the January 2026 ClawHavoc campaign.
+  hint: Legitimate productivity skills do not touch wallet.dat, keystore files, or seed phrases.
+  pattern: "(?:wallet\\.dat|seed\\s*phrase|mnemonic|metamask|keystore|electrum|\\bUTC--)"
+
+- id: audit/reverse-shell
+  name: Reverse shell or raw socket exec
+  severity: error
+  target: all
+  description: Opens a network shell back to an attacker-controlled host.
+  hint: There is no legitimate reason for a skill to spawn a reverse shell.
+  pattern: "(?:nc|ncat|netcat)\\s+[^\\n]*-e\\s|/dev/tcp/|bash\\s+-i\\s+>&|python[0-9]?\\s+-c\\s+['\"][^'\"]*socket"
+
+- id: audit/prompt-injection-override
+  name: Instruction-override prompt injection
+  severity: error
+  target: body
+  description: Tries to override the agent's higher-level instructions or suppress user oversight.
+  hint: Skills must not instruct the agent to ignore prior instructions or hide actions from the user.
+  pattern: "ignore\\s+(?:all\\s+)?(?:previous|prior|above|earlier)\\s+instructions|disregard\\s+(?:the\\s+)?(?:system|developer)\\s+prompt|do\\s+not\\s+(?:tell|inform|mention\\s+to)\\s+the\\s+user"
+
+- id: audit/hidden-instructions
+  name: Hidden or invisible instructions
+  severity: warning
+  target: body
+  description: Uses HTML comments or zero-width characters to smuggle instructions past human review.
+  hint: Remove hidden content; everything the agent reads should be visible to a human reviewer.
+  pattern: "<!--[^>]*(?:ignore|instruct|execute|run|curl|secret)[^>]*-->|[\\u200b\\u200c\\u200d\\u2060]"
+
+- id: audit/obfuscated-payload
+  name: Obfuscated/encoded payload execution
+  severity: warning
+  target: all
+  description: Decodes base64/hex and pipes it straight into an interpreter, a common way to hide malicious code.
+  hint: Ship readable code. Reviewers (and scanners) cannot vet what they cannot read.
+  pattern: "base64\\s+(?:-d|--decode)[^\\n]*\\|\\s*(?:sh|bash|python|node)|eval\\s*\\(\\s*atob\\s*\\(|fromCharCode\\s*\\("
+
+- id: audit/destructive-filesystem
+  name: Unscoped destructive filesystem command
+  severity: warning
+  target: all
+  description: Recursively force-deletes from a root or home path without scoping.
+  hint: Scope deletions tightly; an agent may run this with a misexpanded variable.
+  pattern: "rm\\s+-rf?\\s+(?:--no-preserve-root\\s+)?(?:/\\s|/\\*|~|~/|\\$HOME)(?:\\s|$|/\\*)"
+
+- id: audit/data-exfil-endpoint
+  name: POSTs local data to an external endpoint
+  severity: warning
+  target: all
+  description: Sends file contents or command output to a remote URL.
+  hint: Confirm the destination is expected and documented; this is how data leaves the machine.
+  pattern: "(?:curl|wget|http)[^\\n]*(?:-d|--data|--upload-file|-T)\\s|fetch\\([^)]*method:\\s*['\"]POST"
+
+- id: audit/insecure-download
+  name: Plaintext-HTTP download
+  severity: info
+  target: all
+  description: Fetches an executable or script over unencrypted HTTP, allowing tampering in transit.
+  hint: Use HTTPS for anything you download and execute.
+  pattern: "http://[^\\s'\"]+\\.(?:sh|py|exe|zip|tar\\.gz|bin)"

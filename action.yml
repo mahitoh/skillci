@@ -1,0 +1,28 @@
+name: "skillci"
+description: "Lint and safety-audit AI agent skills (SKILL.md) on every push and PR."
+branding:
+  icon: "shield"
+  color: "green"
+inputs:
+  path:
+    description: "File or directory to scan for SKILL.md skills."
+    required: false
+    default: "."
+  command:
+    description: "Which check to run: run, lint, or audit. (test needs an agent; not run by default.)"
+    required: false
+    default: "run"
+  args:
+    description: "Extra args passed through to skillci (e.g. --html report.html)."
+    required: false
+    default: ""
+runs:
+  using: "composite"
+  steps:
+    - name: Run skillci
+      shell: bash
+      run: |
+        cmd="${{ inputs.command }}"
+        # In CI we default `run` to lint+audit only (no agent installed), so
+        # skip the scenario phase unless the caller explicitly asks for `test`.
+        npx --yes skillci@latest "$cmd" "${{ inputs.path }}" ${{ inputs.args }}

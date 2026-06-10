@@ -1,0 +1,55 @@
+{
+  "name": "skillci",
+  "version": "0.1.0",
+  "description": "CI for AI agent skills — lint, safety-audit, and scenario-test SKILL.md skills before you trust them.",
+  "keywords": [
+    "agent-skills",
+    "skill",
+    "claude-code",
+    "ai-agents",
+    "security",
+    "testing",
+    "lint",
+    "ci"
+  ],
+  "license": "MIT",
+  "author": "mahitoh",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mahitoh/skillci.git"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "bin": {
+    "skillci": "dist/cli.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "rules",
+    "templates"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "test": "node --test dist-test/tests/*.test.js",
+    "pretest": "tsc -p tsconfig.test.json",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "fast-glob": "^3.3.2",
+    "gray-matter": "^4.0.3",
+    "picocolors": "^1.1.1",
+    "yaml": "^2.6.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "typescript": "^5.6.3"
+  }
+}
