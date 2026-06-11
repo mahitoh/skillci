@@ -1,5 +1,5 @@
-name: "skillci"
-description: "Lint and safety-audit AI agent skills (SKILL.md) on every push and PR. Catches malicious patterns and broken skills."
+name: "Agent Skill CI"
+description: "skillci — lint and safety-audit AI agent skills (SKILL.md) on every push and PR. Catches malicious patterns and broken skills."
 author: "mahitoh"
 branding:
   icon: "shield"
